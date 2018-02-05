@@ -1251,7 +1251,7 @@ int lensing_addback_cl_tt(
 	double blurlens = 0.;
 	if ( ple->has_rr ) 	blurlens += ple->cl_blur[index_l];
 	if ( ple->has_pr ) 	blurlens += 2.*ple->cl_lensblur[index_l];
-    ple->cl_lens[index_l*ple->lt_size+ple->index_lt_tt] = 0.*cl_tt[l] + blurlens; //Alert I have decativated the cl_tt and replaced += by = (no lensing)!
+    ple->cl_lens[index_l*ple->lt_size+ple->index_lt_tt] += cl_tt[l] + blurlens; 
   }
   return _SUCCESS_;
 
