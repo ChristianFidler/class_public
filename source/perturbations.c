@@ -152,6 +152,11 @@ int perturb_init(
              ppt->error_message,
              "In the synchronous gauge, it is not self-consistent to assume no CDM: the later is used to define the initial timelike hypersurface. You can either add a negligible amount of CDM or switch to newtonian gauge");
 
+  class_test((ppt->gauge == synchronous) && (ppt->has_cl_cmb_blurring_potential),
+		     ppt->error_message,
+		     "In the synchronous gauge blurring is not implemented yet");
+  
+
   class_test ((ppr->tight_coupling_approximation < first_order_MB) ||
               (ppr->tight_coupling_approximation > compromise_CLASS),
               ppt->error_message,
@@ -600,6 +605,7 @@ int perturb_indices_of_perturbs(
   ppt->has_source_h_prime = _FALSE_;
   ppt->has_source_eta = _FALSE_;
   ppt->has_source_eta_prime = _FALSE_;
+  ppt->has_source_blurring = _FALSE_;
 
   /** - source flags and indices, for sources that all modes have in
       common (temperature, polarization, ...). For temperature, the
@@ -737,6 +743,11 @@ int perturb_indices_of_perturbs(
           ppt->has_source_eta_prime = _TRUE_;
         }
       }
+	  
+      if (ppt->has_cl_cmb_blurring_potential == _TRUE_ && ppt->gauge == newtonian) { //Here Newtonian gauge is still required
+        ppt->has_cmb = _TRUE_;
+        ppt->has_source_blurring = _TRUE_;
+      }
 
       index_type = index_type_common;
       class_define_index(ppt->index_tp_t0,         ppt->has_source_t,         index_type,1);
@@ -769,6 +780,8 @@ int perturb_indices_of_perturbs(
       class_define_index(ppt->index_tp_h_prime,    ppt->has_source_h_prime,   index_type,1);
       class_define_index(ppt->index_tp_eta,        ppt->has_source_eta,       index_type,1);
       class_define_index(ppt->index_tp_eta_prime,  ppt->has_source_eta_prime, index_type,1);
+      class_define_index(ppt->index_tp_r0,         ppt->has_source_blurring,  index_type,1);
+      class_define_index(ppt->index_tp_r1,         ppt->has_source_blurring,  index_type,1);
       ppt->tp_size[index_md] = index_type;
 
       class_test(index_type == 0,
@@ -6091,6 +6104,48 @@ int perturb_sources(
         _set_source_(ppt->index_tp_eta_prime) = dy[ppw->pv->index_pt_eta];
 
     }
+
+	/* blurring potential sources */
+    if (ppt->has_source_blurring == _TRUE_) {
+   
+      if (ppt->gauge == newtonian) {
+        
+		 /* the blurring potential depneds on the perturbations to reionisation. We employ a simple model to get an estimation of these. Note that 
+		  we do not consider Helium properly, but we only want to obtain an order of magnitude estimation anyways. */
+		
+        double xe = pvecthermo[pth->index_th_xe]/1.164; // /pth->reio_xe_after;  /*here we remove helium by normalising to final xe*/
+	
+		class_test(xe > 1,
+		   	       ppt->error_message,
+		   	       "normalised ionisation fraction over 1, perturbed reionisation model cannot be trusted in this region");
+		
+        double sqAxe = sqrt( pth->a1 * exp(pth->a2 * xe));
+       
+        double alphaxe = pth->alpha0 + pth->alpha1* xe;
+        
+        double Rxe = pth->R1*xe + pth->R2*xe*xe + pth->R3 * xe*xe*xe;
+        
+        double gammaxe = pth->gamma0 * pow(xe,pth->gamma1) * pow(-log(xe),pth->gamma2); // xe should be smaller than 1
+	  
+        double delta_e = y[ppw->pv->index_pt_delta_b] * sqAxe * (1.-xe) *pow((1. + alphaxe * k * Rxe + k*k*Rxe*Rxe),-0.25*gammaxe); // There is a problem for very small scales. This forula wont hold anymore: cut delta_e there
+		
+	    // class_test((1. + alphaxe * k * Rxe + k*k*Rxe*Rxe) < 0.,
+	    //           ppt->error_message,
+	    //           "computing in parameter region that is not supported by perturbed reionisation model at k=%g",k);
+		
+		
+		if ((1. + alphaxe * k * Rxe + k*k*Rxe*Rxe) < 0.) delta_e = 0.; // better tell user that k_max is too large for this model!
+		if (xe > 1 || xe < 0) delta_e = 0.;
+		
+        _set_source_(ppt->index_tp_r0) =
+          pvecthermo[pth->index_th_dkappa] * (pvecmetric[ppw->index_mt_psi] -  y[ppw->pv->index_pt_delta_b] - delta_e);
+
+        _set_source_(ppt->index_tp_r1) = 
+          pvecthermo[pth->index_th_dkappa] * y[ppw->pv->index_pt_theta_b]/k;
+		
+		
+      }
+    } 
 
     /* total matter over density (gauge-invariant, defined as in arXiv:1307.1459) */
     if (ppt->has_source_delta_m == _TRUE_) {

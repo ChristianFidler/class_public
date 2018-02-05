@@ -254,7 +254,7 @@ int transfer_init(
       sources: needs to be known here, in order to allocate a large
       enough workspace */
 
-  class_call(transfer_source_tau_size_max(ppr,pba,ppt,ptr,tau_rec,tau0,&tau_size_max),
+  class_call(transfer_source_tau_size_max(ppr,pba,pth,ppt,ptr,tau_rec,tau0,&tau_size_max),
              ptr->error_message,
              ptr->error_message);
 
@@ -348,6 +348,7 @@ int transfer_init(
 
       class_call_parallel(transfer_compute_for_each_q(ppr,
                                                       pba,
+													  pth,
                                                       ppt,
                                                       ptr,
                                                       tp_of_tt,
@@ -509,6 +510,8 @@ int transfer_indices_of_transfers(
     class_define_index(ptr->index_tt_t0,     ppt->has_cl_cmb_temperature,      index_tt,1);
     class_define_index(ptr->index_tt_t1,     ppt->has_cl_cmb_temperature,      index_tt,1);
     class_define_index(ptr->index_tt_lcmb,   ppt->has_cl_cmb_lensing_potential,index_tt,1);
+    class_define_index(ptr->index_tt_r0,     ppt->has_cl_cmb_blurring_potential, index_tt,1);
+    class_define_index(ptr->index_tt_r1,     ppt->has_cl_cmb_blurring_potential, index_tt,1);
     class_define_index(ptr->index_tt_density,ppt->has_nc_density,              index_tt,ppt->selection_num);
     class_define_index(ptr->index_tt_rsd,    ppt->has_nc_rsd,                  index_tt,ppt->selection_num);
     class_define_index(ptr->index_tt_d0,     ppt->has_nc_rsd,                  index_tt,ppt->selection_num);
@@ -520,6 +523,7 @@ int transfer_indices_of_transfers(
     class_define_index(ptr->index_tt_nc_g4,  ppt->has_nc_gr,                   index_tt,ppt->selection_num);
     class_define_index(ptr->index_tt_nc_g5,  ppt->has_nc_gr,                   index_tt,ppt->selection_num);
     class_define_index(ptr->index_tt_lensing,ppt->has_cl_lensing_potential,    index_tt,ppt->selection_num);
+
 
     ptr->tt_size[ppt->index_md_scalars]=index_tt;
 
@@ -1327,6 +1331,12 @@ int transfer_get_source_correspondence(
 
         if ((ppt->has_cl_cmb_lensing_potential == _TRUE_) && (index_tt == ptr->index_tt_lcmb))
           tp_of_tt[index_md][index_tt]=ppt->index_tp_phi_plus_psi;
+		
+        if ((ppt->has_cl_cmb_blurring_potential == _TRUE_) && (index_tt == ptr->index_tt_r0))
+          tp_of_tt[index_md][index_tt]=ppt->index_tp_r0;
+
+        if ((ppt->has_cl_cmb_blurring_potential == _TRUE_) && (index_tt == ptr->index_tt_r1))
+          tp_of_tt[index_md][index_tt]=ppt->index_tp_r1;
 
         if (_index_tt_in_range_(ptr->index_tt_density, ppt->selection_num, ppt->has_nc_density))
           tp_of_tt[index_md][index_tt]=ppt->index_tp_delta_m;
@@ -1415,6 +1425,7 @@ int transfer_free_source_correspondence(
 int transfer_source_tau_size_max(
                                  struct precision * ppr,
                                  struct background * pba,
+								 struct thermo * pth,
                                  struct perturbs * ppt,
                                  struct transfers * ptr,
                                  double tau_rec,
@@ -1434,6 +1445,7 @@ int transfer_source_tau_size_max(
 
       class_call(transfer_source_tau_size(ppr,
                                           pba,
+										  pth,
                                           ppt,
                                           ptr,
                                           tau_rec,
@@ -1475,6 +1487,7 @@ int transfer_source_tau_size_max(
 int transfer_source_tau_size(
                              struct precision * ppr,
                              struct background * pba,
+							 struct thermo * pth,
                              struct perturbs * ppt,
                              struct transfers * ptr,
                              double tau_rec,
@@ -1517,6 +1530,33 @@ int transfer_source_tau_size(
       /* infer number of time steps after removing early times */
       *tau_size = ppt->tau_size-index_tau_min;
     }
+	
+    /* blurring potential */
+
+    if ((ppt->has_cl_cmb_blurring_potential == _TRUE_) &&
+        (index_tt == ptr->index_tt_r0 || index_tt == ptr->index_tt_r1)) {
+ 
+ 	  double tau_reio;
+
+ 	  class_call (background_tau_of_z (pba, pth->z_reio_start, &tau_reio),
+                    pba->error_message,
+                    ptr->error_message);
+	  // printf("reionisation starts at tau = %f or z = %f\n", tau_reio, pth->z_reio_start);
+
+      /* find times after beginning of reionisation */
+      int index_tau_min = 0;
+      while ((index_tau_min < ppt->tau_size) && (ppt->tau_sampling[index_tau_min] < tau_reio))
+        index_tau_min++;
+
+      class_test (index_tau_min == ppt->tau_size,
+        ptr->error_message,
+        "index_tau_min out of bounds (=%d)", ppt->tau_size);
+       
+      /* infer number of time steps after removing early times */
+      *tau_size = ppt->tau_size-index_tau_min;
+      
+
+    }	
 
     /* density Cl's */
     if ((_index_tt_in_range_(ptr->index_tt_density, ppt->selection_num, ppt->has_nc_density)) ||
@@ -1659,6 +1699,7 @@ int transfer_source_tau_size(
 int transfer_compute_for_each_q(
                                 struct precision * ppr,
                                 struct background * pba,
+								struct thermo * pth,
                                 struct perturbs * ppt,
                                 struct transfers * ptr,
                                 int ** tp_of_tt,
@@ -1777,6 +1818,7 @@ int transfer_compute_for_each_q(
 
           class_call(transfer_sources(ppr,
                                       pba,
+									  pth,
                                       ppt,
                                       ptr,
                                       interpolated_sources,
@@ -2058,6 +2100,7 @@ int transfer_interpolate_sources(
 int transfer_sources(
                      struct precision * ppr,
                      struct background * pba,
+					 struct thermo * pth,
                      struct perturbs * ppt,
                      struct transfers * ptr,
                      double * interpolated_sources,
@@ -2159,6 +2202,10 @@ int transfer_sources(
     /* galaxy lensing potential */
     if ((ppt->has_cl_lensing_potential == _TRUE_) && (index_tt >= ptr->index_tt_lensing) && (index_tt < ptr->index_tt_lensing+ppt->selection_num))
       redefine_source = _TRUE_;
+	
+    /* blurring potential */
+    if ((ppt->has_cl_cmb_blurring_potential == _TRUE_) && (index_tt == ptr->index_tt_r0 || index_tt == ptr->index_tt_r1))
+      redefine_source = _TRUE_;
 
   }
 
@@ -2171,6 +2218,7 @@ int transfer_sources(
 
     class_call(transfer_source_tau_size(ppr,
                                         pba,
+										pth,
                                         ppt,
                                         ptr,
                                         tau_rec,
@@ -2249,6 +2297,40 @@ int transfer_sources(
                    ptr->error_message,
                    ptr->error_message);
       }
+	  
+	  
+      /* blurring source: remove times before reionisation*/
+ 
+      if ((ppt->has_cl_cmb_blurring_potential == _TRUE_) && (index_tt == ptr->index_tt_r0 || index_tt == ptr->index_tt_r1)) {
+ 
+        /* first time step after removing early times */
+        index_tau_min =  ppt->tau_size - tau_size;
+        
+        /* loop over time */
+        for (index_tau = index_tau_min; index_tau < ppt->tau_size; index_tau++) {
+ 
+          /* conformal time */
+          tau = ppt->tau_sampling[index_tau];
+ 
+          /* copy from input array to output array */
+          sources[index_tau-index_tau_min] = interpolated_sources[index_tau];
+          
+		  // printf("%d %d %g\n",index_tau,index_tau_min,interpolated_sources[index_tau]);
+		  
+          /* store value of (tau0-tau) */
+          tau0_minus_tau[index_tau-index_tau_min] = tau0 - tau;
+ 
+        }
+ 
+        /* Compute trapezoidal weights for integration over tau */
+        class_call(array_trapezoidal_mweights(tau0_minus_tau,
+                                              tau_size,
+                                              w_trapz,
+                                              ptr->error_message),
+                   ptr->error_message,
+                   ptr->error_message);
+      }
+	  
 
       /* density source: redefine the time sampling, multiply by
          coefficient of Poisson equation, and multiply by selection
@@ -4515,6 +4597,15 @@ int transfer_select_radial_function(
       }
 
     }
+	
+	if (ppt->has_cl_cmb_blurring_potential == _TRUE_) {
+
+ 	 if (index_tt == ptr->index_tt_r0)
+       *radial_type = SCALAR_TEMPERATURE_0;
+
+  	 if (index_tt == ptr->index_tt_r1)
+       *radial_type = SCALAR_TEMPERATURE_1;
+	}
 
     if (ppt->has_cl_cmb_polarization == _TRUE_) {
 

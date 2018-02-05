@@ -1201,6 +1201,21 @@ int input_read_parameters(
     class_read_list_of_doubles("reio_inter_z",pth->reio_inter_z,pth->reio_inter_num);
     class_read_list_of_doubles("reio_inter_xe",pth->reio_inter_xe,pth->reio_inter_num);
   }
+  
+  /** interpolation to estimate perturbed reionisation */
+  
+  
+  class_read_double("a1",pth->a1);
+  class_read_double("a2",pth->a2);
+  class_read_double("alpha0",pth->alpha0);
+  class_read_double("alpha1",pth->alpha1);
+  class_read_double("R1",pth->R1);
+  class_read_double("R2",pth->R2);
+  class_read_double("R3",pth->R3);
+  class_read_double("gamma0",pth->gamma0);
+  class_read_double("gamma1",pth->gamma1);
+  class_read_double("gamma2",pth->gamma2);
+  
 
   /** - energy injection parameters from CDM annihilation/decay */
 
@@ -1287,6 +1302,13 @@ int input_read_parameters(
 
     if ((strstr(string1,"lCl") != NULL) || (strstr(string1,"LCl") != NULL) || (strstr(string1,"LCL") != NULL)) {
       ppt->has_cl_cmb_lensing_potential = _TRUE_;
+      ppt->has_perturbations = _TRUE_;
+      ppt->has_cls = _TRUE_;
+    }
+	
+    if ((strstr(string1,"rCl") != NULL) || (strstr(string1,"RCl") != NULL) || (strstr(string1,"RCL") != NULL)) {
+      ppt->has_cl_cmb_blurring_potential = _TRUE_;
+      ppt->has_cl_cmb_lensing_potential = _TRUE_; /*blurring computation requires lensing*/
       ppt->has_perturbations = _TRUE_;
       ppt->has_cls = _TRUE_;
     }
@@ -1475,6 +1497,10 @@ int input_read_parameters(
       class_test(ppt->has_cl_cmb_lensing_potential == _TRUE_,
                  errmsg,
                  "Inconsistency: you want C_l's for cmb lensing potential, but no scalar modes\n");
+
+	  class_test(ppt->has_cl_cmb_blurring_potential == _TRUE_,
+		         errmsg,
+		         "Inconsistency: you want C_l's for cmb blurring potential, but no scalar modes\n");
 
       class_test(ppt->has_pk_matter == _TRUE_,
                  errmsg,
@@ -2074,7 +2100,8 @@ int input_read_parameters(
     if (ppt->has_scalars == _TRUE_) {
       if ((ppt->has_cl_cmb_temperature == _TRUE_) ||
           (ppt->has_cl_cmb_polarization == _TRUE_) ||
-          (ppt->has_cl_cmb_lensing_potential == _TRUE_))
+          (ppt->has_cl_cmb_lensing_potential == _TRUE_) ||
+		  (ppt->has_cl_cmb_blurring_potential == _TRUE_))
         class_read_double("l_max_scalars",ppt->l_scalar_max);
 
       if ((ppt->has_cl_lensing_potential == _TRUE_) || (ppt->has_cl_number_count == _TRUE_))
@@ -2743,6 +2770,7 @@ int input_read_parameters(
 
   class_read_int("accurate_lensing",ppr->accurate_lensing);
   class_read_int("delta_l_max",ppr->delta_l_max);
+  class_read_int("N_phi",ppr->N_phi);
   if (ppr->accurate_lensing == _TRUE_) {
     class_read_int("num_mu_minus_lmax",ppr->num_mu_minus_lmax);
     class_read_int("tol_gauss_legendre",ppr->tol_gauss_legendre);
@@ -2927,6 +2955,17 @@ int input_default_params(
   pth->reionization_width=0.5;
   pth->helium_fullreio_redshift=3.5;
   pth->helium_fullreio_width=0.5;
+  
+  pth->a1 = 0.09;
+  pth->a2 = 9.64;
+  pth->alpha0 = -2.92;
+  pth->alpha1 = 10.04;
+  pth->R1 = 17.81;
+  pth->R2 = -58.03;
+  pth->R3 = 55.28;
+  pth->gamma0 = 16.13;
+  pth->gamma1 = 2.20;
+  pth->gamma2 = 1.23;
 
   pth->binned_reio_num=0;
   pth->binned_reio_z=NULL;
@@ -2953,6 +2992,7 @@ int input_default_params(
   ppt->has_cl_cmb_temperature = _FALSE_;
   ppt->has_cl_cmb_polarization = _FALSE_;
   ppt->has_cl_cmb_lensing_potential = _FALSE_;
+  ppt->has_cl_cmb_blurring_potential = _FALSE_;
   ppt->has_cl_number_count = _FALSE_;
   ppt->has_cl_lensing_potential = _FALSE_;
   ppt->has_pk_matter = _FALSE_;
@@ -3400,7 +3440,7 @@ int input_default_precision ( struct precision * ppr ) {
   ppr->accurate_lensing=_FALSE_;
   ppr->num_mu_minus_lmax=70;
   ppr->delta_l_max=500; // 750 for 0.2% near l_max, 1000 for 0.1%
-
+  ppr->N_phi = 2000;
   /**
    * - automatic estimate of machine precision
    */

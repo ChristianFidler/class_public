@@ -1484,6 +1484,10 @@ int output_open_cl_file(
       class_fprintf_columntitle(*clfile,"phiphi",psp->has_pp,colnum);
       class_fprintf_columntitle(*clfile,"TPhi",psp->has_tp,colnum);
       class_fprintf_columntitle(*clfile,"Ephi",psp->has_ep,colnum);
+      class_fprintf_columntitle(*clfile,"RR",psp->has_rr,colnum);
+      class_fprintf_columntitle(*clfile,"TR",psp->has_tr,colnum);
+      class_fprintf_columntitle(*clfile,"ER",psp->has_er,colnum);
+      class_fprintf_columntitle(*clfile,"phiR",psp->has_pr,colnum);  
     }
     else if (pop->output_format == camb_format) {
       class_fprintf_columntitle(*clfile,"TT",psp->has_tt,colnum);
@@ -1493,6 +1497,10 @@ int output_open_cl_file(
       class_fprintf_columntitle(*clfile,"dd",psp->has_pp,colnum);
       class_fprintf_columntitle(*clfile,"dT",psp->has_tp,colnum);
       class_fprintf_columntitle(*clfile,"dE",psp->has_ep,colnum);
+      class_fprintf_columntitle(*clfile,"RR",psp->has_rr,colnum);
+      class_fprintf_columntitle(*clfile,"TR",psp->has_tr,colnum);
+      class_fprintf_columntitle(*clfile,"ER",psp->has_er,colnum);
+      class_fprintf_columntitle(*clfile,"dR",psp->has_pr,colnum);  
     }
 
     /** - Next deal with entries that are independent of format type */

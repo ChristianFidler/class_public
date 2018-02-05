@@ -74,6 +74,8 @@ struct thermo
   double tau_reio; /**< if above set to tau, input value of reionization optical depth */
 
   double z_reio;   /**< if above set to z,   input value of reionization redshift */
+  
+  double z_reio_start;   /**< redshift when reionization starts, depends on reionization algorithm */
 
   short compute_cb2_derivatives; /**< do we want to include in computation derivatives of baryon sound speed? */
 
@@ -88,6 +90,18 @@ struct thermo
   double helium_fullreio_redshift; /**< redshift for of helium reionization */
 
   double helium_fullreio_width; /**< width of helium reionization */
+
+  /** parameters for perturbaed reionisation */
+  double a1;
+  double a2;
+  double alpha0;
+  double alpha1;
+  double R1;
+  double R2;
+  double R3;
+  double gamma0;
+  double gamma1;
+  double gamma2;
 
   /** parameters for reio_bins_tanh */
 
@@ -213,6 +227,7 @@ struct thermo
   double tau_cut; /**< at at which the visibility goes below a fixed fraction of the maximum visibility, used for an approximation in perturbation module */
   double angular_rescaling; /**< [ratio ra_rec / (tau0-tau_rec)]: gives CMB rescaling in angular space relative to flat model (=1 for curvature K=0) */
   double tau_free_streaming;   /**< minimum value of tau at which sfree-streaming approximation can be switched on */
+  double reio_xe_after; /**< ionisation fraction after reionisation */
 
   //@}
 

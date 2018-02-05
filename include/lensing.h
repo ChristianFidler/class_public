@@ -41,6 +41,8 @@ struct lensing {
   int has_td; /**< do we want \f$ C_l^{Td}\f$? */
   int has_ll; /**< do we want \f$ C_l^{ll}\f$? (l = lensing potential) */
   int has_tl; /**< do we want \f$ C_l^{Tl}\f$? */
+  int has_rr; /**< do we want to compute blurring contribtion? */
+  int has_pr; /**< do we want to compute blurring-lensing correlation */
 
   int index_lt_tt; /**< index for type \f$ C_l^{TT} \f$*/
   int index_lt_ee; /**< index for type \f$ C_l^{EE} \f$*/
@@ -52,6 +54,8 @@ struct lensing {
   int index_lt_td; /**< index for type \f$ C_l^{Td} \f$*/
   int index_lt_ll; /**< index for type \f$ C_l^{dd} \f$*/
   int index_lt_tl; /**< index for type \f$ C_l^{Td} \f$*/
+  int index_lt_rr; /**< index for type \f$ C_l^{RR} \f$*/
+  int index_lt_pr; /**< index for type \f$ C_l^{dR} \f$*/
 
   int lt_size; /**< number of \f$ C_l\f$ types requested */
 
@@ -76,6 +80,8 @@ struct lensing {
   double * cl_lens; /**< table of anisotropy spectra for each
 			   multipole and types,
 			   cl[index_l * ple->lt_size + index_lt] */
+  double * cl_blur;  /**< table of the blurring contribution to cl_tt */
+  double * cl_lensblur; /**< table of the blurring-lensing corellation to cl_tt  */
 
   double * ddcl_lens; /**< second derivatives for interpolation */
 

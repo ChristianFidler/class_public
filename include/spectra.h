@@ -62,6 +62,10 @@ struct spectra {
   int has_td; /**< do we want \f$ C_l^{Td}\f$? */
   int has_pd; /**< do we want \f$ C_l^{\phi d}\f$? */
   int has_ll; /**< do we want \f$ C_l^{ll}\f$? (l = galaxy lensing potential) */
+  int has_rr; /**< do we want C_l^r-r ? (CMB blurring potential) */
+  int has_tr; /**< do we want C_l^T-r ? */
+  int has_er; /**< do we want C_l^E-r ? */
+  int has_pr; /**< do we want C_l^P-r? */
   int has_tl; /**< do we want \f$ C_l^{Tl}\f$? */
   int has_dl; /**< do we want \f$ C_l^{dl}\f$? */
 
@@ -72,6 +76,10 @@ struct spectra {
   int index_ct_pp; /**< index for type \f$ C_l^{\phi\phi} \f$*/
   int index_ct_tp; /**< index for type \f$ C_l^{T\phi} \f$*/
   int index_ct_ep; /**< index for type \f$ C_l^{E\phi} \f$*/
+  int index_ct_rr; /**< index for type C_l^r-r */
+  int index_ct_tr; /**< index for type C_l^T-r */
+  int index_ct_er; /**< index for type C_l^E-r */
+  int index_ct_pr; /**< index for type C_l^P-r */
   int index_ct_dd; /**< first index for type \f$ C_l^{dd} \f$((d_size*d_size-(d_size-non_diag)*(d_size-non_diag-1)/2) values) */
   int index_ct_td; /**< first index for type \f$ C_l^{Td} \f$(d_size values) */
   int index_ct_pd; /**< first index for type \f$ C_l^{pd} \f$(d_size values) */

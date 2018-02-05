@@ -127,6 +127,7 @@ struct perturbs
   short has_cl_cmb_temperature;       /**< do we need \f$ C_l \f$'s for CMB temperature? */
   short has_cl_cmb_polarization;      /**< do we need \f$ C_l \f$'s for CMB polarization? */
   short has_cl_cmb_lensing_potential; /**< do we need \f$ C_l \f$'s for CMB lensing potential? */
+  short has_cl_cmb_blurring_potential;/**< do we need \f$ C_l \f$'s for CMB blurring potential? */
   short has_cl_lensing_potential;     /**< do we need \f$ C_l \f$'s for galaxy lensing potential? */
   short has_cl_number_count;          /**< do we need \f$ C_l \f$'s for density number count? */
   short has_pk_matter;                /**< do we need matter Fourier spectrum? */
@@ -264,6 +265,8 @@ struct perturbs
   short has_source_h_prime;      /**< do we need source for metric fluctuation h'? */
   short has_source_eta;          /**< do we need source for metric fluctuation eta? */
   short has_source_eta_prime;    /**< do we need source for metric fluctuation eta'? */
+  short has_source_blurring;    /**< do we need sources for the blurring potential? */
+  
 
   /* remember that the temperature source function includes three
      terms that we call 0,1,2 (since the strategy in class v > 1.7 is
@@ -305,6 +308,9 @@ struct perturbs
   int index_tp_h_prime;      /**< index value for metric fluctuation h' */
   int index_tp_eta;          /**< index value for metric fluctuation eta */
   int index_tp_eta_prime;    /**< index value for metric fluctuation eta' */
+  
+  int index_tp_r0;			 /**< index value for l=0 blurring sources */
+  int index_tp_r1;			 /**< index value for l=1 blurring sources */
 
   int * tp_size; /**< number of types tp_size[index_md] included in computation for each mode */
 

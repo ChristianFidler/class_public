@@ -96,6 +96,8 @@ struct transfers {
   int index_tt_lcmb;    /**< index for transfer type = CMB lensing */
   int index_tt_density; /**< index for first bin of transfer type = matter density */
   int index_tt_lensing; /**< index for first bin of transfer type = galaxy lensing */
+  int index_tt_r0;		/**< index for transfer type = l=0 blurring */
+  int index_tt_r1;		/**< index for transfer type = l=1 blurring */
 
   int index_tt_rsd;     /**< index for first bin of transfer type = redshift space distortion of number count */
   int index_tt_d0;      /**< index for first bin of transfer type = doppler effect for of number count (j=0 term) */
@@ -360,6 +362,7 @@ extern "C" {
   int transfer_source_tau_size_max(
                                    struct precision * ppr,
                                    struct background * pba,
+								   struct thermo * pth,
                                    struct perturbs * ppt,
                                    struct transfers * ptr,
                                    double tau_rec,
@@ -370,6 +373,7 @@ extern "C" {
   int transfer_source_tau_size(
                                struct precision * ppr,
                                struct background * pba,
+							   struct thermo * pth,
                                struct perturbs * ppt,
                                struct transfers * ptr,
                                double tau_rec,
@@ -382,6 +386,7 @@ extern "C" {
   int transfer_compute_for_each_q(
                                   struct precision * ppr,
                                   struct background * pba,
+								  struct thermo * pth,
                                   struct perturbs * ppt,
                                   struct transfers * ptr,
                                   int ** tp_of_tt,
@@ -415,6 +420,7 @@ extern "C" {
   int transfer_sources(
                        struct precision * ppr,
                        struct background * pba,
+					   struct thermo * pth,
                        struct perturbs * ppt,
                        struct transfers * ptr,
                        double * interpolated_sources,

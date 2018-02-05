@@ -1749,6 +1749,7 @@ int thermodynamics_reionization(
   int bin;
   int point;
   double xe_input,xe_actual;
+  
 
   /** - allocate the vector of parameters defining the function \f$ X_e(z) \f$ */
 
@@ -1761,12 +1762,13 @@ int thermodynamics_reionization(
     /** - --> set values of these parameters, excepted those depending on the reionization redshift */
 
     if (pth->reio_parametrization == reio_camb) {
-      preio->reionization_parameters[preio->index_reio_xe_after] = 1. + pth->YHe/(_not4_*(1.-pth->YHe));    /* xe_after_reio: H + singly ionized He (note: segmentation fault impossible, checked before that denominator is non-zero) */
+      preio->reionization_parameters[preio->index_reio_xe_after] = 1. + pth->YHe/(_not4_*(1.-pth->YHe)); 
+	  /* xe_after_reio: H + singly ionized He (note: segmentation fault impossible, checked before that denominator is non-zero) */
     }
     if (pth->reio_parametrization == reio_half_tanh) {
       preio->reionization_parameters[preio->index_reio_xe_after] = 1.; /* xe_after_reio: neglect He ionization */
       //+ 2*pth->YHe/(_not4_*(1.-pth->YHe));    /* xe_after_reio: H + fully ionized He */
-    }
+	}
     preio->reionization_parameters[preio->index_reio_exponent] = pth->reionization_exponent; /* reio_exponent */
     preio->reionization_parameters[preio->index_reio_width] = pth->reionization_width;    /* reio_width */
     preio->reionization_parameters[preio->index_helium_fullreio_fraction] = pth->YHe/(_not4_*(1.-pth->YHe)); /* helium_fullreio_fraction (note: segmentation fault impossible, checked before that denominator is non-zero) */
@@ -1831,6 +1833,8 @@ int thermodynamics_reionization(
                  pth->error_message);
 
       pth->tau_reio=preio->reionization_optical_depth;
+	  pth->reio_xe_after =  preio->reionization_parameters[preio->index_reio_xe_after];
+  
 
     }
 
@@ -1932,8 +1936,12 @@ int thermodynamics_reionization(
 
       /* store z_reionization in thermodynamics structure */
       pth->z_reio=preio->reionization_parameters[preio->index_reio_redshift];
+	  pth->reio_xe_after =  preio->reionization_parameters[preio->index_reio_xe_after];
+  
 
     }
+	/* Pass to the thermodynamics structure the redshift where reionization starts */
+	pth->z_reio_start = preio->reionization_parameters[preio->index_reio_start];
 
     free(preio->reionization_parameters);
 
@@ -2028,6 +2036,11 @@ int thermodynamics_reionization(
                pth->error_message);
 
     pth->tau_reio=preio->reionization_optical_depth;
+	
+    pth->reio_xe_after =  preio->reionization_parameters[preio->index_reio_xe_after];
+  
+
+	pth->z_reio_start = preio->reionization_parameters[preio->index_reio_start];
 
     return _SUCCESS_;
 
@@ -2145,6 +2158,11 @@ int thermodynamics_reionization(
                pth->error_message);
 
     pth->tau_reio=preio->reionization_optical_depth;
+	
+    pth->reio_xe_after =  preio->reionization_parameters[preio->index_reio_xe_after];
+  
+
+	pth->z_reio_start = preio->reionization_parameters[preio->index_reio_start];
 
     return _SUCCESS_;
 
@@ -2236,10 +2254,17 @@ int thermodynamics_reionization(
                pth->error_message);
 
     pth->tau_reio=preio->reionization_optical_depth;
+	
+    pth->reio_xe_after =  preio->reionization_parameters[preio->index_reio_xe_after];
+  
+	
+	pth->z_reio_start = preio->reionization_parameters[preio->index_reio_start];
 
     return _SUCCESS_;
 
   }
+  
+  
 
   class_test(0 == 0,
              pth->error_message,

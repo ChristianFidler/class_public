@@ -139,6 +139,8 @@ int lensing_init(
   double * cl_ee = NULL; /* unlensed  cl, to be filled to avoid repeated calls to spectra_cl_at_l */
   double * cl_bb = NULL; /* unlensed  cl, to be filled to avoid repeated calls to spectra_cl_at_l */
   double * cl_pp; /* potential cl, to be filled to avoid repeated calls to spectra_cl_at_l */
+  double * cl_rr; /* blurring cl, to be filled to avoid repeated calls to spectra_cl_at_l */
+  double * cl_pr; /* blurring-lensing correlation, to be filled to avoid repeated calls to spectra_cl_at_l */
 
   double res,resX,lens;
   double resp, resm, lensp, lensm;
@@ -441,6 +443,16 @@ int lensing_init(
   class_alloc(cl_pp,
               (ple->l_unlensed_max+1)*sizeof(double),
               ple->error_message);
+ 
+  if (ple->has_rr)
+    class_alloc(cl_rr,
+			  (ple->l_unlensed_max+1)*sizeof(double),
+			  ple->error_message);
+			  
+  if (ple->has_pr)
+    class_alloc(cl_pr,
+			  (ple->l_unlensed_max+1)*sizeof(double),
+			  ple->error_message);
 
   class_alloc(cl_md_ic,
               psp->md_size*sizeof(double *),
@@ -471,6 +483,11 @@ int lensing_init(
                ple->error_message);
     cl_tt[l] = cl_unlensed[ple->index_lt_tt];
     cl_pp[l] = cl_unlensed[ple->index_lt_pp];
+	if (ple->has_rr)
+      cl_rr[l] = cl_unlensed[ple->index_lt_rr];
+    if (ple->has_pr)
+	  cl_pr[l] = cl_unlensed[ple->index_lt_pr];
+	
     if (ple->has_te==_TRUE_) {
       cl_te[l] = cl_unlensed[ple->index_lt_te];
     }
@@ -492,6 +509,127 @@ int lensing_init(
 
   free(cl_md_ic);
   free(cl_md);
+  
+  
+  
+  /** FLAT SKY SIMPLIFIED BLURRING **/
+  int index_l = 0;
+  int index_l_prime= 0;
+  int index_phi = 0;
+  int l_prime;
+  double l_weight;
+  double phi;
+  double phi_weight;
+  double l_int;
+  int l_interpolation;
+  
+#pragma omp parallel for                     \
+  private (index_l)                          \
+  schedule (static)
+  
+  for(index_l=0; index_l<ple->l_size; index_l++){
+	 
+	l = (int) ple->l[index_l];   
+    
+	if (ple->has_rr) {
+	 
+	
+	  double PsiBlur = 0.;	
+	  double IntegBlur = 0.;
+	
+	  for(index_l_prime=0;index_l_prime<ple->l_size; index_l_prime++){		
+		
+		l_prime = (int) ple->l[index_l_prime]; 
+		
+		if (index_l_prime == 0) 
+	      l_weight = (ple->l[index_l_prime+1] - ple->l[index_l_prime])/2.; 
+		else if (index_l_prime == ple->l_size-1) 
+		  l_weight = (ple->l[index_l_prime] - ple->l[index_l_prime-1])/2.; 
+		else
+  		  l_weight = (ple->l[index_l_prime+1] - ple->l[index_l_prime-1])/2.; 
+    	
+		PsiBlur += cl_rr[l_prime] /2. / M_PI * 2./M_PI* l_prime * l_weight;	    
+   
+	    for(index_phi = 0; index_phi < ppr->N_phi; index_phi++){
+	      
+	      
+  		  phi = index_phi * 2. * M_PI / (ppr->N_phi-1);
+		  
+    	  if (index_phi == 0 || index_phi == ppr->N_phi-1) 
+    	    phi_weight = M_PI / (ppr->N_phi-1);
+    	  else 
+      	    phi_weight = 2. * M_PI / (ppr->N_phi-1); 
+      
+	      l_int = sqrt( pow(l_prime,2) + pow(l,2) - 2.* cos(phi) * l_prime * l  );
+	      
+		  l_interpolation = floor(l_int + 0.5); // can you actually get more by making a interpolation?
+      
+	      if (l_interpolation >= 2 && l_interpolation <= ple->l_unlensed_max )
+		    IntegBlur += 
+	            cl_tt[l_prime]  *   
+	            cl_rr[l_interpolation]  
+	            /4. / M_PI/ M_PI*
+	            2./M_PI * 
+	            l_prime * phi_weight * l_weight;
+           
+	    } // end of loop over angle
+    			
+	  } // end of loop over l_prime
+	  
+	  ple->cl_blur[index_l] = IntegBlur - cl_tt[l] * PsiBlur;
+    }
+  
+    if (ple->has_pr) {
+	
+	  double PsiBlur = 0.;	
+	  double IntegBlur = 0.;
+	
+	  for(index_l_prime=0;index_l_prime<ple->l_size; index_l_prime++){		
+		
+  		l_prime = (int) ple->l[index_l_prime]; 
+		
+		
+		
+		if (index_l_prime == 0) 
+	      l_weight = (ple->l[index_l_prime+1] - ple->l[index_l_prime])/2.; 
+		else if (index_l_prime == ple->l_size-1) 
+		  l_weight = (ple->l[index_l_prime] - ple->l[index_l_prime-1])/2.; 
+		else
+  		  l_weight = (ple->l[index_l_prime+1] - ple->l[index_l_prime-1])/2.; 
+		
+	    PsiBlur += l_prime * cl_pr[l_prime] / 2. / M_PI* 2./M_PI * l_prime * l_weight;
+   
+	    for(index_phi = 0; index_phi < ppr->N_phi; index_phi++){
+	      
+		  phi = index_phi * 2. * M_PI / (ppr->N_phi-1);
+		  
+  		  if (index_phi == 0 || index_phi == ppr->N_phi-1) 
+  	        phi_weight = M_PI / (ppr->N_phi-1);
+  		  else 
+    		phi_weight = 2. * M_PI / (ppr->N_phi-1); 
+		  
+	      l_int = sqrt( pow(l_prime,2) + pow(l,2) - 2.* cos(phi) * l_prime * l  );
+	      
+		  l_interpolation = floor(l_int + 0.5); 
+	      
+		  if (l_interpolation >= 2 && l_interpolation <= ple->l_unlensed_max )
+		    IntegBlur += 
+              cl_tt[l_prime]  *   
+              l_prime * l_int * cl_pr[l_interpolation]  
+              /4. / M_PI/ M_PI*
+              2./M_PI * 
+              l_prime * phi_weight * l_weight;
+           
+	    } // end of loop over angle
+    			
+	  } // end of loop over integrated l_prime
+	  
+	  ple->cl_lensblur[index_l] = IntegBlur - cl_tt[l] * l * PsiBlur;
+    }
+	
+  } // end of loop over external l
+  
+ 
 
   /** - Compute sigma2\f$(\mu)\f$ and Cgl2(\f$\mu\f$) **/
 
@@ -808,6 +946,8 @@ int lensing_free(
 
     free(ple->l);
     free(ple->cl_lens);
+	free(ple->cl_blur);
+	free(ple->cl_lensblur);
     free(ple->ddcl_lens);
     free(ple->l_max_lt);
 
@@ -893,6 +1033,22 @@ int lensing_indices(
     ple->has_tp = _FALSE_;
   }
 
+  if (psp->has_rr == _TRUE_) {
+    ple->has_rr = _TRUE_;
+	ple->index_lt_rr = psp->index_ct_rr;
+  }
+  else {
+    ple->has_rr = _FALSE_;
+  }
+  
+  if (psp->has_pr == _TRUE_) {
+    ple->has_pr = _TRUE_;
+	ple->index_lt_pr = psp->index_ct_pr;
+  }
+  else {
+    ple->has_pr = _FALSE_;
+  }
+
   if (psp->has_dd == _TRUE_) {
     ple->has_dd = _TRUE_;
     ple->index_lt_dd=psp->index_ct_dd;
@@ -952,7 +1108,15 @@ int lensing_indices(
   class_alloc(ple->cl_lens,
               ple->l_size*ple->lt_size*sizeof(double),
               ple->error_message);
-
+			  
+  class_alloc(ple->cl_blur,
+			  ple->l_size*sizeof(double),
+			  ple->error_message);			  
+			  
+  class_alloc(ple->cl_lensblur,
+			  ple->l_size*sizeof(double),
+			  ple->error_message);
+			  
   class_alloc(ple->ddcl_lens,
               ple->l_size*ple->lt_size*sizeof(double),
               ple->error_message);
@@ -1084,7 +1248,10 @@ int lensing_addback_cl_tt(
 
   for (index_l=0; index_l<ple->l_size; index_l++) {
     l = (int)ple->l[index_l];
-    ple->cl_lens[index_l*ple->lt_size+ple->index_lt_tt] += cl_tt[l];
+	double blurlens = 0.;
+	if ( ple->has_rr ) 	blurlens += ple->cl_blur[index_l];
+	if ( ple->has_pr ) 	blurlens += 2.*ple->cl_lensblur[index_l];
+    ple->cl_lens[index_l*ple->lt_size+ple->index_lt_tt] = 0.*cl_tt[l] + blurlens; //Alert I have decativated the cl_tt and replaced += by = (no lensing)!
   }
   return _SUCCESS_;
 
