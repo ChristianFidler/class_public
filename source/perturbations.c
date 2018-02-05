@@ -6113,11 +6113,7 @@ int perturb_sources(
 		 /* the blurring potential depneds on the perturbations to reionisation. We employ a simple model to get an estimation of these. Note that 
 		  we do not consider Helium properly, but we only want to obtain an order of magnitude estimation anyways. */
 		
-        double xe = pvecthermo[pth->index_th_xe]/1.164; // /pth->reio_xe_after;  /*here we remove helium by normalising to final xe*/
-	
-		class_test(xe > 1,
-		   	       ppt->error_message,
-		   	       "normalised ionisation fraction over 1, perturbed reionisation model cannot be trusted in this region");
+        double xe = pvecthermo[pth->index_th_xe]/(1. + 2.*pth->YHe/(_not4_*(1.-pth->YHe)));
 		
         double sqAxe = sqrt( pth->a1 * exp(pth->a2 * xe));
        
@@ -6135,7 +6131,6 @@ int perturb_sources(
 		
 		
 		if ((1. + alphaxe * k * Rxe + k*k*Rxe*Rxe) < 0.) delta_e = 0.; // better tell user that k_max is too large for this model!
-		if (xe > 1 || xe < 0) delta_e = 0.;
 		
         _set_source_(ppt->index_tp_r0) =
           pvecthermo[pth->index_th_dkappa] * (pvecmetric[ppw->index_mt_psi] -  y[ppw->pv->index_pt_delta_b] - delta_e);
