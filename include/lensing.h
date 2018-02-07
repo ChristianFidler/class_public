@@ -25,6 +25,10 @@ struct lensing {
 
   short has_lensed_cls; /**< do we need to compute lensed \f$ C_l\f$'s at all ? */
 
+  double A_L; /**< Parameter rescaling C_l^phi-phi only in the
+                 calculation of the lensed C_l^TT,TE,EE,BB (but the
+                 output for C_l^phi-phi will be unchanged) */
+
   //@}
 
   /** @name - information on number of type of C_l's (TT, TE...) */

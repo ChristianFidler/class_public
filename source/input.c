@@ -1201,10 +1201,10 @@ int input_read_parameters(
     class_read_list_of_doubles("reio_inter_z",pth->reio_inter_z,pth->reio_inter_num);
     class_read_list_of_doubles("reio_inter_xe",pth->reio_inter_xe,pth->reio_inter_num);
   }
-  
+
   /** interpolation to estimate perturbed reionisation */
-  
-  
+
+
   class_read_double("a1",pth->a1);
   class_read_double("a2",pth->a2);
   class_read_double("alpha0",pth->alpha0);
@@ -1215,7 +1215,7 @@ int input_read_parameters(
   class_read_double("gamma0",pth->gamma0);
   class_read_double("gamma1",pth->gamma1);
   class_read_double("gamma2",pth->gamma2);
-  
+
 
   /** - energy injection parameters from CDM annihilation/decay */
 
@@ -1305,7 +1305,7 @@ int input_read_parameters(
       ppt->has_perturbations = _TRUE_;
       ppt->has_cls = _TRUE_;
     }
-	
+
     if ((strstr(string1,"rCl") != NULL) || (strstr(string1,"RCl") != NULL) || (strstr(string1,"RCL") != NULL)) {
       ppt->has_cl_cmb_blurring_potential = _TRUE_;
       ppt->has_cl_cmb_lensing_potential = _TRUE_; /*blurring computation requires lensing*/
@@ -2131,6 +2131,9 @@ int input_read_parameters(
         ((ppt->has_cl_cmb_temperature == _TRUE_) || (ppt->has_cl_cmb_polarization == _TRUE_)) &&
         (ppt->has_cl_cmb_lensing_potential == _TRUE_)) {
       ple->has_lensed_cls = _TRUE_;
+
+      class_read_double("A_L",ple->A_L);
+
     }
     else {
       class_stop(errmsg,"you asked for lensed CMB Cls, but this requires a minimal number of options: 'modes' should include 's', 'output' should include 'tCl' and/or 'pCL', and also, importantly, 'lCl', the CMB lensing potential spectrum. You forgot one of those in your input.");
@@ -2955,7 +2958,7 @@ int input_default_params(
   pth->reionization_width=0.5;
   pth->helium_fullreio_redshift=3.5;
   pth->helium_fullreio_width=0.5;
-  
+
   pth->a1 = 0.09;
   pth->a2 = 9.64;
   pth->alpha0 = -2.92;
@@ -3173,6 +3176,7 @@ int input_default_params(
   /** - lensing structure */
 
   ple->has_lensed_cls = _FALSE_;
+  ple->A_L = 1.;
 
   /** - nonlinear structure */
 
