@@ -531,6 +531,57 @@ int lensing_init(
 	 
 	l = (int) ple->l[index_l];   
     
+	
+	//if (ple->has_rr) {
+	  // Proxi for flat lensing for now
+	
+	//  double PsiLens = 0.;	
+	//  double IntegLens = 0.;
+	
+	 // for(index_l_prime=0;index_l_prime<ple->l_size; index_l_prime++){		
+		
+	//	l_prime = (int) ple->l[index_l_prime]; 
+		
+	//	if (index_l_prime == 0) 
+	 //     l_weight = (ple->l[index_l_prime+1] - ple->l[index_l_prime])/2.; 
+	//	else if (index_l_prime == ple->l_size-1) 
+	//	  l_weight = (ple->l[index_l_prime] - ple->l[index_l_prime-1])/2.; 
+	//	else
+  	//	  l_weight = (ple->l[index_l_prime+1] - ple->l[index_l_prime-1])/2.; 
+    	
+	//	PsiLens += cl_pp[l_prime] /2. / M_PI * 2./M_PI* l_prime * l_prime * l_prime * l_weight;	    
+   
+	  //  for(index_phi = 0; index_phi < ppr->N_phi; index_phi++){
+	      
+	      
+  	//	  phi = index_phi * 2. * M_PI / (ppr->N_phi-1);
+		  
+    //	  if (index_phi == 0 || index_phi == ppr->N_phi-1) 
+    //	    phi_weight = M_PI / (ppr->N_phi-1);
+    //	  else 
+     // 	    phi_weight = 2. * M_PI / (ppr->N_phi-1); 
+			
+	   //   l_int = sqrt( pow(l_prime,2) + pow(l,2) - 2.* cos(phi) * l_prime * l  );
+	      
+		//  l_interpolation = floor(l_int + 0.5); // can you actually get more by making a interpolation?
+      
+	      //if (l_interpolation >= 2 && l_interpolation <= ple->l_unlensed_max )
+		   // IntegLens += 
+	       //     cl_ee[l_prime] * l_int * l_int *  
+	       //     cl_pp[l_interpolation] *
+		//		cos(2.* phi) * cos(2.* phi)
+	     //       /4. / M_PI/ M_PI*
+	      //      2./M_PI * 
+	      //      l_prime * l_prime * l_prime * phi_weight * l_weight;
+           
+	  //  } // end of loop over angle
+    			
+//	  } // end of loop over l_prime
+	
+//	  ple->cl_blurE[index_l] = IntegLens - cl_ee[l] * l * l * PsiLens;
+	
+  //  }
+	
 	if (ple->has_rr) {
 	 
 	
@@ -947,6 +998,7 @@ int lensing_free(
     free(ple->l);
     free(ple->cl_lens);
 	free(ple->cl_blur);
+	free(ple->cl_blurE);
 	free(ple->cl_lensblur);
     free(ple->ddcl_lens);
     free(ple->l_max_lt);
@@ -1110,6 +1162,10 @@ int lensing_indices(
               ple->error_message);
 			  
   class_alloc(ple->cl_blur,
+			  ple->l_size*sizeof(double),
+			  ple->error_message);	
+			
+  class_alloc(ple->cl_blurE,
 			  ple->l_size*sizeof(double),
 			  ple->error_message);			  
 			  
@@ -1382,11 +1438,14 @@ int lensing_addback_cl_ee_bb(
                              double * cl_ee,
                              double * cl_bb) {
 
+
   int index_l, l;
 
   for (index_l=0; index_l<ple->l_size; index_l++) {
     l = (int)ple->l[index_l];
-    ple->cl_lens[index_l*ple->lt_size+ple->index_lt_ee] += cl_ee[l];
+	double blurlens = 0.;
+	if ( ple->has_rr ) 	blurlens += ple->cl_blurE[index_l];
+    ple->cl_lens[index_l*ple->lt_size+ple->index_lt_ee] += cl_ee[l]; // + blurlens; 
     ple->cl_lens[index_l*ple->lt_size+ple->index_lt_bb] += cl_bb[l];
   }
   return _SUCCESS_;
