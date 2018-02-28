@@ -1162,17 +1162,12 @@ int lensing_indices(
 
   class_alloc(ple->cl_blur,
 			  ple->l_size*sizeof(double),
-<<<<<<< HEAD
-			  ple->error_message);
-
-=======
 			  ple->error_message);
 
   class_alloc(ple->cl_blurE,
 			  ple->l_size*sizeof(double),
 			  ple->error_message);
 
->>>>>>> 39c802a4d8b08996823ee3ee8897f9e4e81c5148
   class_alloc(ple->cl_lensblur,
 			  ple->l_size*sizeof(double),
 			  ple->error_message);
