@@ -6115,7 +6115,7 @@ int perturb_sources(
 		
         double xe = pvecthermo[pth->index_th_xe]/(1. + 2.*pth->YHe/(_not4_*(1.-pth->YHe)));
 		
-        double sqAxe = sqrt( pth->a1 * exp(pth->a2 * xe));
+        double sqAxe = sqrt( sqrt(pth->a1*pth->a1) * exp(pth->a2 * xe));
        
         double alphaxe = pth->alpha0 + pth->alpha1* xe;
         
@@ -6132,10 +6132,10 @@ int perturb_sources(
 		
 		if ((1. + alphaxe * k * Rxe + k*k*Rxe*Rxe) < 0.) delta_e = 0.; // better tell user that k_max is too large for this model!
 		
-        _set_source_(ppt->index_tp_r0) =
+        _set_source_(ppt->index_tp_r0) = (pth->a1 < 0 ? -1. : 1.)*
           pvecthermo[pth->index_th_dkappa] * (pvecmetric[ppw->index_mt_psi] -  y[ppw->pv->index_pt_delta_b] - delta_e);
 
-        _set_source_(ppt->index_tp_r1) = 
+        _set_source_(ppt->index_tp_r1) = (pth->a1 < 0 ? -1. : 1.)*
           pvecthermo[pth->index_th_dkappa] * y[ppw->pv->index_pt_theta_b]/k;
 		
 		

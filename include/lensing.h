@@ -85,6 +85,7 @@ struct lensing {
 			   multipole and types,
 			   cl[index_l * ple->lt_size + index_lt] */
   double * cl_blur;  /**< table of the blurring contribution to cl_tt */
+  double * cl_blurE;  /**< table of the blurring contribution to cl_ee */
   double * cl_lensblur; /**< table of the blurring-lensing corellation to cl_tt  */
 
   double * ddcl_lens; /**< second derivatives for interpolation */
