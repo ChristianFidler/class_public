@@ -631,7 +631,6 @@ int lensing_init(
 
     if (ple->has_pr) {
 
-	  double PsiBlur = 0.;
 	  double IntegBlur = 0.;
 
 	  for(index_l_prime=0;index_l_prime<ple->l_size; index_l_prime++){
@@ -646,8 +645,6 @@ int lensing_init(
 		  l_weight = (ple->l[index_l_prime] - ple->l[index_l_prime-1])/2.;
 		else
   		  l_weight = (ple->l[index_l_prime+1] - ple->l[index_l_prime-1])/2.;
-
-	    PsiBlur += l_prime * cl_pr[l_prime] / 2. / M_PI* 2./M_PI * l_prime * l_weight;
 
 	    for(index_phi = 0; index_phi < ppr->N_phi; index_phi++){
 
@@ -666,7 +663,6 @@ int lensing_init(
 		    IntegBlur +=
               cl_tt[l_prime]  *
               (l * l_prime * cos(phi) - pow(l_prime,2)) * cl_pr[l_interpolation]
-				  // (l * l_prime * cos(phi) - pow(l_prime,2)) instead of l_prime * l_int
               /4. / M_PI/ M_PI*
               2./M_PI *
               l_prime * phi_weight * l_weight;
@@ -675,7 +671,7 @@ int lensing_init(
 
 	  } // end of loop over integrated l_prime
 
-	  ple->cl_lensblur[index_l] = IntegBlur - 0.*cl_tt[l] * l * PsiBlur;
+	  ple->cl_lensblur[index_l] = IntegBlur;
     }
 
   } // end of loop over external l
@@ -1307,7 +1303,7 @@ int lensing_addback_cl_tt(
 	double blurlens = 0.;
 	if ( ple->has_rr ) 	blurlens += ple->cl_blur[index_l]; 
 	if ( ple->has_pr ) 	blurlens += 2.*ple->cl_lensblur[index_l];
-    ple->cl_lens[index_l*ple->lt_size+ple->index_lt_tt] += cl_tt[l] + blurlens; /** ALERT and added 0. and removed +=*/
+    ple->cl_lens[index_l*ple->lt_size+ple->index_lt_tt] += cl_tt[l] + blurlens; 
   }
   return _SUCCESS_;
 
