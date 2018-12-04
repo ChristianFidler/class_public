@@ -514,20 +514,23 @@ int lensing_init(
 
   /** FLAT SKY SIMPLIFIED BLURRING **/
   int index_l = 0;
-  int index_l_prime= 0;
-  int index_phi = 0;
-  int l_prime;
-  double l_weight;
-  double phi;
-  double phi_weight;
-  double l_int;
-  int l_interpolation;
+  
 
 #pragma omp parallel for                     \
   private (index_l)                          \
   schedule (static)
 
   for(index_l=0; index_l<ple->l_size; index_l++){
+	  
+	int index_l_prime= 0;
+	int index_phi = 0;
+	int l_prime;
+	double l_weight;
+	double phi;
+	double phi_weight;
+	double l_int;
+	int l_interpolation;	  
+	  
 
 	l = (int) ple->l[index_l];
 
@@ -585,6 +588,7 @@ int lensing_init(
 
 
 	  double PsiBlur = 0.;
+	  
 	  double IntegBlur = 0.;
 
 	  for(index_l_prime=0;index_l_prime<ple->l_size; index_l_prime++){
@@ -599,6 +603,7 @@ int lensing_init(
   		  l_weight = (ple->l[index_l_prime+1] - ple->l[index_l_prime-1])/2.;
 
 		PsiBlur += cl_rr[l_prime] /2. / M_PI * 2./M_PI* l_prime * l_weight;
+		
 
 	    for(index_phi = 0; index_phi < ppr->N_phi; index_phi++){
 
@@ -632,6 +637,7 @@ int lensing_init(
     if (ple->has_pr) {
 
 	  double IntegBlur = 0.;
+	  double w_interpolation;
 
 	  for(index_l_prime=0;index_l_prime<ple->l_size; index_l_prime++){
 
@@ -646,6 +652,8 @@ int lensing_init(
 		else
   		  l_weight = (ple->l[index_l_prime+1] - ple->l[index_l_prime-1])/2.;
 
+          
+		  
 	    for(index_phi = 0; index_phi < ppr->N_phi; index_phi++){
 
 		  phi = index_phi * 2. * M_PI / (ppr->N_phi-1);
@@ -657,22 +665,25 @@ int lensing_init(
 
 	      l_int = sqrt( pow(l_prime,2) + pow(l,2) - 2.* cos(phi) * l_prime * l  );
 
-		  l_interpolation = floor(l_int + 0.5);
+		  l_interpolation = floor(l_int); /* make interpolation better? */
+		  w_interpolation = (l_int - l_interpolation);
 
-		  if (l_interpolation >= 2 && l_interpolation <= ple->l_unlensed_max )
-		    IntegBlur +=
-              cl_tt[l_prime]  *
-              (l * l_prime * cos(phi) - pow(l_prime,2)) * cl_pr[l_interpolation]
+		  if (l_interpolation >= 2 && l_interpolation < ple->l_unlensed_max ) {
+  		  
+		    IntegBlur += 
+              cl_tt[l_prime] *
+              (l * l_prime * cos(phi) - pow(l_prime,2)) * ((1.-w_interpolation) *cl_pr[l_interpolation] + w_interpolation *cl_pr[l_interpolation+1]) 
               /4. / M_PI/ M_PI*
               2./M_PI *
               l_prime * phi_weight * l_weight;
+	      }
 
 	    } // end of loop over angle
 
 	  } // end of loop over integrated l_prime
 
-	  ple->cl_lensblur[index_l] = IntegBlur;
-    }
+	  ple->cl_lensblur[index_l] = IntegBlur ;  
+  	}
 
   } // end of loop over external l
 
@@ -1303,7 +1314,7 @@ int lensing_addback_cl_tt(
 	double blurlens = 0.;
 	if ( ple->has_rr ) 	blurlens += ple->cl_blur[index_l]; 
 	if ( ple->has_pr ) 	blurlens += 2.*ple->cl_lensblur[index_l];
-    ple->cl_lens[index_l*ple->lt_size+ple->index_lt_tt] += cl_tt[l] + blurlens; 
+    ple->cl_lens[index_l*ple->lt_size+ple->index_lt_tt] += cl_tt[l] + blurlens;  
   }
   return _SUCCESS_;
 
